@@ -1,0 +1,84 @@
+version: '3.7'
+
+services:
+  flask:
+    build: ./flask-app
+    image: flask-app
+    ports: 
+    - 5000:5000
+
+    env_file: 
+    - envfiles/flask.env
+    environment: 
+      DB_HOST: postgresql
+      REDIS_HOST: redis
+    
+    depends_on: 
+    - redis
+    - postgresql
+    #- mysql
+
+    networks: 
+    - backend
+    - frontend
+      
+  redis:
+    image: redis
+    ports:
+    - 6379:6379
+    volumes: 
+    - redis-vl:/data
+    networks: 
+    - backend
+
+  postgresql:
+    image: postgres
+    restart: always
+    ports: 
+    - 5432:5432
+    volumes: 
+    - pg-vl:/var/lib/postgresql/data
+    secrets:
+    - postgre-user
+    - postgre-password
+    environment: 
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgre-password
+      POSTGRES_DB: dtx
+      POSTGRES_USER_FILE: /run/secrets/postgre-user
+    networks: 
+    - backend
+
+  # mysql:
+  #   image: mysql
+  #   volumes:
+  #   - mysql-vl:/var/lib/mysql
+  #   networks:
+  #   - backend
+  #   secrets:
+  #   - mysql-password
+  #   - mysql-user
+
+  #   command: --default-authentication-plugin=mysql_native_password
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: /run/secrets/mysql-password
+  #     MYSQL_PASSWORD: /run/secrets/mysql-password
+  #     MYSQL_DATABASE: dtx
+  #     MYSQL_USER: /run/secrets/mysql-user
+
+volumes: 
+  pg-vl:
+  redis-vl:
+  #mysql-vl:
+networks: 
+  backend:
+  frontend:
+
+secrets:
+  postgre-user: 
+    file: secrets/postgresql-user.txt
+  postgre-password:
+    file: secrets/postgresql-password.txt
+  # mysql-password:
+  #   file: secrets/mysql-root-password.txt
+  # mysql-user:
+  #   file: secrets/mysql-user.txt
